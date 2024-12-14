@@ -1,16 +1,24 @@
 import { useState, useRef } from 'react'
-import { Button, Stack, Text } from '@mantine/core'
+import { Button, Stack, Text, TextInput } from '@mantine/core'
 import { FaMicrophone, FaStop } from 'react-icons/fa'
 
 export default function VoiceRecorder({ onTranscriptionComplete }) {
   const [isRecording, setIsRecording] = useState(false)
   const [error, setError] = useState(null)
+  const [apiKey, setApiKey] = useState('')
   const mediaRecorder = useRef(null)
   const audioChunks = useRef([])
 
   const startRecording = async () => {
+    setError(null)
+
+    const hasAccess = await checkMicrophoneAccess()
+    if (!hasAccess) {
+      setError('Microphone access was denied. Please allow microphone access in your browser settings.')
+      return
+    }
+
     try {
-      setError(null)
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: true,
         video: false
@@ -28,22 +36,17 @@ export default function VoiceRecorder({ onTranscriptionComplete }) {
         }
       }
 
-      mediaRecorder.current.onstop = () => {
+      mediaRecorder.current.onstop = async () => {
         const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' })
-        onTranscriptionComplete("This is a test transcription of what was just recorded. In a real implementation, this would be the actual transcribed text from your voice recording. Please proceed with processing this text using the OpenRouter API.")
+        const transcription = await transcribeAudio(audioBlob)
+        onTranscriptionComplete(transcription)
       }
 
       mediaRecorder.current.start(200)
       setIsRecording(true)
     } catch (err) {
       console.error('Error accessing microphone:', err)
-      if (err.name === 'NotAllowedError') {
-        setError('Microphone access was denied. Please allow microphone access in your browser settings.')
-      } else if (err.name === 'NotFoundError') {
-        setError('No microphone found. Please connect a microphone and try again.')
-      } else {
-        setError(`Could not access microphone: ${err.message}`)
-      }
+      setError(`Could not access microphone: ${err.message}`)
     }
   }
 
@@ -55,8 +58,47 @@ export default function VoiceRecorder({ onTranscriptionComplete }) {
     }
   }
 
+  const transcribeAudio = async (audioBlob) => {
+    if (!apiKey) {
+      setError('Please enter your OpenAI API key.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'recording.webm');
+    formData.append('model', 'whisper-1');
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to transcribe audio');
+      }
+
+      const data = await response.json();
+      return data.text || 'No transcription available';
+    } catch (error) {
+      console.error('Error in transcription:', error);
+      setError('Error transcribing audio: ' + error.message);
+      return 'Error transcribing audio';
+    }
+  }
+
   return (
     <Stack align="center" spacing="md">
+      <TextInput
+        label="OpenAI API Key"
+        value={apiKey}
+        onChange={(e) => setApiKey(e.target.value)}
+        placeholder="Enter your OpenAI API key"
+        type="password"
+      />
       {error && <Text color="red">{error}</Text>}
       {!isRecording ? (
         <Button 
