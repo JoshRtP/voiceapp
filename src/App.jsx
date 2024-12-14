@@ -18,12 +18,16 @@ export default function App() {
 
     try {
       const result = await processWithGPT4(text, apiKey)
-      setSummary(result.summary)
-      setActions(result.actions)
-      setEmail(result.email)
+      setSummary(result.summary || '')
+      setActions(result.actions || '')
+      setEmail(result.email || '')
     } catch (err) {
       setError('Failed to process transcript: ' + err.message)
       console.error('Processing error:', err)
+      // Set empty strings to clear any previous content
+      setSummary('')
+      setActions('')
+      setEmail('')
     } finally {
       setIsProcessing(false)
     }
@@ -47,7 +51,11 @@ export default function App() {
         
         <VoiceRecorder onTranscriptionComplete={handleTranscriptionComplete} />
         
-        {error && <Text color="red">{error}</Text>}
+        {error && (
+          <Text color="red" size="sm">
+            {error}
+          </Text>
+        )}
 
         <Stack spacing="md">
           <Text fw={700}>Raw Transcription:</Text>
@@ -62,44 +70,51 @@ export default function App() {
           </Button>
         </Stack>
 
-        <Stack spacing="md">
-          <Text fw={700}>Executive Summary:</Text>
-          <Textarea
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            minRows={4}
-            autosize
-          />
-          <Button onClick={() => copyToClipboard(summary)}>
-            Copy Summary
-          </Button>
-        </Stack>
+        {transcription && (
+          <>
+            <Stack spacing="md">
+              <Text fw={700}>Executive Summary:</Text>
+              <Textarea
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                minRows={4}
+                autosize
+                placeholder="Processing summary..."
+              />
+              <Button onClick={() => copyToClipboard(summary)}>
+                Copy Summary
+              </Button>
+            </Stack>
 
-        <Stack spacing="md">
-          <Text fw={700}>Action Items:</Text>
-          <Textarea
-            value={actions}
-            onChange={(e) => setActions(e.target.value)}
-            minRows={4}
-            autosize
-          />
-          <Button onClick={() => copyToClipboard(actions)}>
-            Copy Actions
-          </Button>
-        </Stack>
+            <Stack spacing="md">
+              <Text fw={700}>Action Items:</Text>
+              <Textarea
+                value={actions}
+                onChange={(e) => setActions(e.target.value)}
+                minRows={4}
+                autosize
+                placeholder="Processing actions..."
+              />
+              <Button onClick={() => copyToClipboard(actions)}>
+                Copy Actions
+              </Button>
+            </Stack>
 
-        <Stack spacing="md">
-          <Text fw={700}>Email Draft:</Text>
-          <Textarea
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            minRows={4}
-            autosize
-          />
-          <Button onClick={() => copyToClipboard(email)}>
-            Copy Email
-          </Button>
-        </Stack>
+            <Stack spacing="md">
+              <Text fw={700}>Email Draft:</Text>
+              <Textarea
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                minRows={4}
+                autosize
+                placeholder="Processing email draft..."
+              />
+              <Button onClick={() => copyToClipboard(email)}>
+                Copy Email
+              </Button>
+            </Stack>
+          </>
+        )}
       </Stack>
     </Container>
   )
