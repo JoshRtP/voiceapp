@@ -1,60 +1,42 @@
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+export async function processWithGPT4(text, apiKey) {
+  const systemPrompt = `You are an AI assistant that processes meeting transcripts. Given a transcript, create three outputs:
+1. An executive summary (max 250 words)
+2. A bulleted list of actionable items with owners (use [OWNER] placeholder) and deadlines
+3. A professional email draft including key points and next steps
 
-export async function processWithAI(text, apiKey) {
+Format your response as a JSON object with keys: summary, actions, and email.`;
+
   try {
-    const response = await fetch(OPENROUTER_API_URL, {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': window.location.origin,
-        'OpenRouter-Referrer': window.location.origin
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
-            content: `You are an AI assistant that processes text and provides three outputs:
-              1) A concise summary
-              2) A list of actionable items
-              3) A professional email draft
-              Structure your response as a JSON object with three keys: summary, actions, and email.`
+            content: systemPrompt
           },
           {
             role: 'user',
             content: text
           }
-        ]
+        ],
+        temperature: 0.7
       })
     });
 
     if (!response.ok) {
-      throw new Error('AI processing failed');
+      throw new Error('Failed to process with GPT-4');
     }
 
     const data = await response.json();
-    let result;
-    
-    try {
-      result = JSON.parse(data.choices[0].message.content);
-    } catch (e) {
-      // If parsing fails, try to format the response manually
-      const content = data.choices[0].message.content;
-      result = {
-        summary: content.split('Summary:')[1]?.split('Action Items:')[0]?.trim() || content,
-        actions: content.split('Action Items:')[1]?.split('Email Draft:')[0]?.trim() || 'No actions specified',
-        email: content.split('Email Draft:')[1]?.trim() || 'No email draft generated'
-      };
-    }
-
-    return result;
+    return JSON.parse(data.choices[0].message.content);
   } catch (error) {
-    console.error('Error in AI processing:', error);
-    return {
-      summary: 'Error processing response',
-      actions: 'Error processing response',
-      email: 'Error processing response'
-    };
+    console.error('Error in GPT-4 processing:', error);
+    throw error;
   }
 }

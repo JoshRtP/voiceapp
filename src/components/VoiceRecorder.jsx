@@ -12,7 +12,7 @@ export default function VoiceRecorder({ onTranscriptionComplete }) {
   const checkMicrophoneAccess = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      stream.getTracks().forEach(track => track.stop()) // Stop the stream immediately
+      stream.getTracks().forEach(track => track.stop())
       return true
     } catch (err) {
       console.error('Microphone access error:', err)
@@ -21,6 +21,11 @@ export default function VoiceRecorder({ onTranscriptionComplete }) {
   }
 
   const startRecording = async () => {
+    if (!apiKey) {
+      setError('Please enter your OpenAI API key first.')
+      return
+    }
+    
     setError(null)
 
     const hasAccess = await checkMicrophoneAccess()
@@ -50,7 +55,7 @@ export default function VoiceRecorder({ onTranscriptionComplete }) {
       mediaRecorder.current.onstop = async () => {
         const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' })
         const transcription = await transcribeAudio(audioBlob)
-        onTranscriptionComplete(transcription)
+        onTranscriptionComplete(transcription, apiKey)
       }
 
       mediaRecorder.current.start()
@@ -70,14 +75,9 @@ export default function VoiceRecorder({ onTranscriptionComplete }) {
   }
 
   const transcribeAudio = async (audioBlob) => {
-    if (!apiKey) {
-      setError('Please enter your OpenAI API key.');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', audioBlob, 'recording.webm');
-    formData.append('model', 'whisper-1');
+    const formData = new FormData()
+    formData.append('file', audioBlob, 'recording.webm')
+    formData.append('model', 'whisper-1')
 
     try {
       const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -86,18 +86,18 @@ export default function VoiceRecorder({ onTranscriptionComplete }) {
           'Authorization': `Bearer ${apiKey}`,
         },
         body: formData,
-      });
+      })
 
       if (!response.ok) {
-        throw new Error('Failed to transcribe audio');
+        throw new Error('Failed to transcribe audio')
       }
 
-      const data = await response.json();
-      return data.text || 'No transcription available';
+      const data = await response.json()
+      return data.text || 'No transcription available'
     } catch (error) {
-      console.error('Error in transcription:', error);
-      setError('Error transcribing audio: ' + error.message);
-      return 'Error transcribing audio';
+      console.error('Error in transcription:', error)
+      setError('Error transcribing audio: ' + error.message)
+      throw error
     }
   }
 
@@ -109,6 +109,7 @@ export default function VoiceRecorder({ onTranscriptionComplete }) {
         onChange={(e) => setApiKey(e.target.value)}
         placeholder="Enter your OpenAI API key"
         type="password"
+        style={{ width: '100%' }}
       />
       {error && <Text color="red">{error}</Text>}
       {!isRecording ? (
@@ -117,6 +118,7 @@ export default function VoiceRecorder({ onTranscriptionComplete }) {
           onClick={startRecording}
           color="blue"
           size="lg"
+          disabled={!apiKey}
         >
           Start Recording
         </Button>
