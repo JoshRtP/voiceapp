@@ -9,6 +9,17 @@ export default function VoiceRecorder({ onTranscriptionComplete }) {
   const mediaRecorder = useRef(null)
   const audioChunks = useRef([])
 
+  const checkMicrophoneAccess = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach(track => track.stop()) // Stop the stream immediately
+      return true
+    } catch (err) {
+      console.error('Microphone access error:', err)
+      return false
+    }
+  }
+
   const startRecording = async () => {
     setError(null)
 
