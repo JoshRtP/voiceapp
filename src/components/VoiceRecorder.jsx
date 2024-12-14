@@ -42,7 +42,7 @@ export default function VoiceRecorder({ onTranscriptionComplete }) {
         onTranscriptionComplete(transcription)
       }
 
-      mediaRecorder.current.start(200)
+      mediaRecorder.current.start()
       setIsRecording(true)
     } catch (err) {
       console.error('Error accessing microphone:', err)
