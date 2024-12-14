@@ -10,13 +10,7 @@ Return ONLY a JSON object with this exact structure:
   "summary": "your executive summary here",
   "actions": "your action items here",
   "email": "your email draft here"
-}
-
-IMPORTANT: 
-- Ensure all text is properly escaped for JSON
-- Do not include any markdown or special formatting
-- Use \\n for line breaks
-- Keep responses concise and professional`;
+}`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -34,11 +28,10 @@ IMPORTANT:
           },
           {
             role: 'user',
-            content: `Please process this transcript and format the response as specified: ${text}`
+            content: `Please process this transcript and format the response as specified:\n\n${text}`
           }
         ],
-        temperature: 0.7,
-        response_format: { type: "json_object" }  // Enforce JSON response
+        temperature: 0.7
       })
     });
 
@@ -50,18 +43,21 @@ IMPORTANT:
     const data = await response.json();
     const content = data.choices[0].message.content;
     
-    // Attempt to parse the JSON response
     try {
       return JSON.parse(content);
     } catch (parseError) {
       console.error('JSON Parse Error:', parseError);
       console.log('Raw GPT-4 Response:', content);
       
-      // Fallback: Try to extract content even if JSON is malformed
+      // If JSON parsing fails, try to extract content manually
+      const summaryMatch = content.match(/\"summary\":\s*\"(.*?)\"/s);
+      const actionsMatch = content.match(/\"actions\":\s*\"(.*?)\"/s);
+      const emailMatch = content.match(/\"email\":\s*\"(.*?)\"/s);
+
       return {
-        summary: "Error processing summary. Please try again.",
-        actions: "Error processing actions. Please try again.",
-        email: "Error processing email draft. Please try again."
+        summary: summaryMatch ? summaryMatch[1] : "Error processing summary",
+        actions: actionsMatch ? actionsMatch[1] : "Error processing actions",
+        email: emailMatch ? emailMatch[1] : "Error processing email"
       };
     }
   } catch (error) {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Container, Title, Stack, Textarea, Button, Text, LoadingOverlay } from '@mantine/core'
+import { Container, Title, Stack, Textarea, Button, Text, LoadingOverlay, Paper } from '@mantine/core'
 import VoiceRecorder from './components/VoiceRecorder'
 import { processWithGPT4 } from './services/ai'
 
@@ -24,10 +24,6 @@ export default function App() {
     } catch (err) {
       setError('Failed to process transcript: ' + err.message)
       console.error('Processing error:', err)
-      // Set empty strings to clear any previous content
-      setSummary('')
-      setActions('')
-      setEmail('')
     } finally {
       setIsProcessing(false)
     }
@@ -44,7 +40,7 @@ export default function App() {
   }
 
   return (
-    <Container size="md" py="xl">
+    <Container size="lg" py="xl">
       <LoadingOverlay visible={isProcessing} />
       <Stack spacing="xl">
         <Title order={1}>Voice Processing App</Title>
@@ -57,62 +53,70 @@ export default function App() {
           </Text>
         )}
 
-        <Stack spacing="md">
-          <Text fw={700}>Raw Transcription:</Text>
-          <Textarea
-            value={transcription}
-            readOnly
-            minRows={4}
-            autosize
-          />
-          <Button onClick={() => copyToClipboard(transcription)}>
-            Copy Transcription
-          </Button>
-        </Stack>
-
         {transcription && (
           <>
-            <Stack spacing="md">
-              <Text fw={700}>Executive Summary:</Text>
-              <Textarea
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                minRows={4}
-                autosize
-                placeholder="Processing summary..."
-              />
-              <Button onClick={() => copyToClipboard(summary)}>
-                Copy Summary
-              </Button>
-            </Stack>
+            <Paper shadow="xs" p="md" withBorder>
+              <Stack spacing="md">
+                <Text fw={700} size="lg">Raw Transcription:</Text>
+                <Textarea
+                  value={transcription}
+                  readOnly
+                  minRows={4}
+                  autosize
+                />
+                <Button onClick={() => copyToClipboard(transcription)}>
+                  Copy Transcription
+                </Button>
+              </Stack>
+            </Paper>
 
-            <Stack spacing="md">
-              <Text fw={700}>Action Items:</Text>
-              <Textarea
-                value={actions}
-                onChange={(e) => setActions(e.target.value)}
-                minRows={4}
-                autosize
-                placeholder="Processing actions..."
-              />
-              <Button onClick={() => copyToClipboard(actions)}>
-                Copy Actions
-              </Button>
-            </Stack>
+            <Paper shadow="xs" p="md" withBorder>
+              <Stack spacing="md">
+                <Text fw={700} size="lg">Executive Summary:</Text>
+                <Textarea
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value)}
+                  minRows={4}
+                  autosize
+                  placeholder={isProcessing ? "Processing summary..." : "Summary will appear here"}
+                />
+                <Button onClick={() => copyToClipboard(summary)}>
+                  Copy Summary
+                </Button>
+              </Stack>
+            </Paper>
 
-            <Stack spacing="md">
-              <Text fw={700}>Email Draft:</Text>
-              <Textarea
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                minRows={4}
-                autosize
-                placeholder="Processing email draft..."
-              />
-              <Button onClick={() => copyToClipboard(email)}>
-                Copy Email
-              </Button>
-            </Stack>
+            <Paper shadow="xs" p="md" withBorder>
+              <Stack spacing="md">
+                <Text fw={700} size="lg">Action Items:</Text>
+                <Textarea
+                  value={actions}
+                  onChange={(e) => setActions(e.target.value)}
+                  minRows={4}
+                  autosize
+                  placeholder={isProcessing ? "Processing actions..." : "Action items will appear here"}
+                />
+                <Button onClick={() => copyToClipboard(actions)}>
+                  Copy Actions
+                </Button>
+              </Stack>
+            </Paper>
+
+            <Paper shadow="xs" p="md" withBorder>
+              <Stack spacing="md">
+                <Text fw={700} size="lg">Email Draft:</Text>
+                <Textarea
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  minRows={4}
+                  autosize
+                  placeholder={isProcessing ? "Processing email draft..." : "Email draft will appear here"}
+                />
+                <Button onClick={() => copyToClipboard(email)}>
+                  Copy Email
+                </Button>
+              </Stack>
+            </Paper>
           </>
         )}
       </Stack>
